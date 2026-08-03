@@ -1,0 +1,213 @@
+<!DOCTYPE html> 
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>タスクリスト</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            width: 450px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        h1 { margin-top: 0; color: #333; font-size: 1.5rem; }
+        h3 { font-size: 1rem; color: #666; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 25px; }
+        
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        input[type="date"] {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            outline: none;
+        }
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            outline: none;
+        }
+        button#add-btn {
+            padding: 10px 20px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        button#add-btn:hover { background-color: #357abd; }
+
+        ul { list-style: none; padding: 0; margin: 0; }
+        li {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #f0f0f0;
+            margin-bottom: 5px;
+            border-radius: 6px;
+        }
+        .todo-date {
+            font-size: 0.85rem;
+            color: #888;
+            margin-left: 10px;
+            margin-right: 5px;
+            white-space: nowrap;
+        }
+        .todo-text { flex-grow: 1; transition: 0.3s; word-break: break-all; }
+        
+        /* 完了セクションのスタイル */
+        #completed-list .todo-text,
+        #completed-list .todo-date {
+            text-decoration: line-through;
+            color: #aaa;
+        }
+        
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ffbaba;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: color 0.2s;
+            margin-left: 5px;
+        }
+        .delete-btn:hover { color: #ff4d4f; }
+
+        input[type="checkbox"] { transform: scale(1.2); cursor: pointer; }
+    </style>  
+</head>
+<body>
+    <div class="container">
+        <h1>タスクリスト</h1>
+        <div class="input-group">
+            <input type="date" id="todo-date">
+            <input type="text" id="todo-input" placeholder="新しいタスクを追加...">
+            <button id="add-btn">追加</button>
+        </div>
+
+        <h3>進行中のタスク</h3>
+        <ul id="active-list"></ul>
+
+        <h3>完了したタスク</h3>
+        <ul id="completed-list"></ul>
+    </div>
+
+    <script>
+        const input = document.getElementById('todo-input');
+        const dateInput = document.getElementById('todo-date');
+        const addBtn = document.getElementById('add-btn');
+        const activeList = document.getElementById('active-list');
+        const completedList = document.getElementById('completed-list');
+
+        // タスクをメモリ上に管理する配列
+        let tasks = [];
+
+        function render() {
+            activeList.innerHTML = '';
+            completedList.innerHTML = '';
+
+            // 未完了タスク：日付が新しい順 (降順) にソート
+            const activeTasks = tasks
+                .filter(t => !t.completed)
+                .sort((a, b) => b.date.localeCompare(a.date));
+
+            // 完了済タスク：日付が新しい順 (降順) にソート
+            const completedTasks = tasks
+                .filter(t => t.completed)
+                .sort((a, b) => b.date.localeCompare(a.date));
+
+            // 描画用の統合配列
+            const sortedTasks = [...activeTasks, ...completedTasks];
+
+            sortedTasks.forEach((task) => {
+                const li = document.createElement('li');
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = task.completed;
+                checkbox.onclick = () => toggleTask(task.id);
+
+                const dateSpan = document.createElement('span');
+                dateSpan.className = 'todo-date';
+                dateSpan.textContent = task.date;
+
+                const textSpan = document.createElement('span');
+                textSpan.className = 'todo-text';
+                textSpan.textContent = task.text;
+
+                li.append(checkbox, dateSpan, textSpan);
+
+                if (task.completed) {
+                    // 完了済タスクにのみ削除ボタンを追加
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.innerHTML = '&#128465;';
+                    deleteBtn.onclick = () => deleteTask(task.id);
+                    li.appendChild(deleteBtn);
+
+                    completedList.appendChild(li);
+                } else {
+                    activeList.appendChild(li);
+                }
+            });
+        }
+
+        function addTask() {
+            const text = input.value.trim();
+            const date = dateInput.value;
+
+            // 日付またはタスク内容が未設定の場合は追加不可
+            if (!text || !date) {
+                alert('タスク内容と日付を入力してください。');
+                return;
+            }
+
+            tasks.push({
+                id: Date.now(),
+                text: text,
+                date: date,
+                completed: false
+            });
+
+            input.value = '';
+            dateInput.value = '';
+            render();
+        }
+
+        function toggleTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                render();
+            }
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            render();
+        }
+
+        addBtn.addEventListener('click', addTask);
+        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') addTask(); });
+
+        // 初期レンダリング
+        render();
+    </script>
+</body>
+</html>
