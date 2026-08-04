@@ -1,0 +1,27 @@
+<!DOCTYPE html> 
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>タスクリスト</title>
+    <link rel="stylesheet" href="to_doList.css">
+</head>
+<body>
+    <div class="container">
+        <h1>タスクリスト</h1>
+        <div class="input-group">
+            <input type="date" id="todo-date">
+            <input type="text" id="todo-input" placeholder="新しいタスクを追加...">
+            <button id="add-btn">追加</button>
+        </div>
+
+        <h3>進行中のタスク</h3>
+        <ul id="active-list"></ul>
+
+        <h3>完了したタスク</h3>
+        <ul id="completed-list"></ul>
+    </div>
+
+    <script src="to_doList.js"></script>
+</body>
+</html>
